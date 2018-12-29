@@ -1,6 +1,7 @@
 # flutter_to_drive
 
-export to google drive
+- https://pub.dartlang.org/packages/google_sign_in
+- https://pub.dartlang.org/packages/googleapis
 
 ## Getting Started
 
