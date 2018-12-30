@@ -3,12 +3,12 @@ import 'dart:io' as io;
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:googleapis/drive/v3.dart';
-import 'package:http/http.dart' show BaseRequest, Response, StreamedResponse;
-import 'package:http/io_client.dart';
 import 'package:path_provider/path_provider.dart';
 
-/*
+import 'http_client.dart';
 
+/*
+Japanese example
 https://qiita.com/aoinakanishi/items/6ff8222847fcf934a64a
 
 scopes : https://developers.google.com/identity/protocols/googlescopes
@@ -42,14 +42,15 @@ class DriveScreen extends StatefulWidget {
 
 class DriveScreenState extends State<DriveScreen> {
   GoogleSignInAccount account;
+
   DriveApi api;
 
-  GlobalKey<ScaffoldState> _sKey = GlobalKey();
+  GlobalKey<ScaffoldState> _scaffold = GlobalKey();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      key: _sKey,
+      key: _scaffold,
       appBar: AppBar(
         title: Text('Flutter to drive'),
         actions: account == null
@@ -100,7 +101,9 @@ class DriveScreenState extends State<DriveScreen> {
                               children: (snapshot.data as FileList)
                                   .files
                                   .map((f) => ListTile(
+                                        dense: true,
                                         title: Text(f.name),
+                                        leading: Icon(Icons.insert_drive_file),
                                       ))
                                   .toList(),
                             );
@@ -122,13 +125,15 @@ class DriveScreenState extends State<DriveScreen> {
       api = DriveApi(client);
     } catch (error) {
       print('DriveScreen.login.ERROR... $error');
+      _scaffold.currentState.showSnackBar(SnackBar(
+        backgroundColor: Colors.red.shade700,
+        content: Text(
+          'Error : $error',
+          style: TextStyle(color: Colors.white),
+        ),
+      ));
     }
     setState(() {});
-  }
-
-  void listFiles() async {
-    final files = await api.files.list();
-    print('DriveScreenState.listFiles... $files');
   }
 
   void toDrive() async {
@@ -138,31 +143,25 @@ class DriveScreenState extends State<DriveScreen> {
     gFile.name = filename;
 
     final dir = await getApplicationDocumentsDirectory();
-    final f = io.File('${dir.path}/$filename');
-    await f.create();
-    await f.writeAsString('$filename');
+    final localFile = io.File('${dir.path}/$filename');
+    await localFile.create();
+    await localFile.writeAsString('$filename');
 
-    api.files
-        .create(gFile, uploadMedia: Media(f.openRead(), f.lengthSync()))
-        .then((file) => _sKey.currentState.showSnackBar(
-            SnackBar(content: Text('File saved => id : ${file.id}'))));
+    final createdFile = await api.files.create(gFile,
+        uploadMedia: Media(localFile.openRead(), localFile.lengthSync()));
+
+    _scaffold.currentState.showSnackBar(SnackBar(
+      content: Text('File saved => id : ${createdFile.id}'),
+    ));
+
+    // rebuild to refresh file list
+    setState(() {});
   }
 
   void logout() {
     _googleSignIn.signOut();
+    setState(() {
+      account = null;
+    });
   }
-}
-
-class GoogleHttpClient extends IOClient {
-  Map<String, String> _headers;
-
-  GoogleHttpClient(this._headers) : super();
-
-  @override
-  Future<StreamedResponse> send(BaseRequest request) =>
-      super.send(request..headers.addAll(_headers));
-
-  @override
-  Future<Response> head(Object url, {Map<String, String> headers}) =>
-      super.head(url, headers: headers..addAll(_headers));
 }
