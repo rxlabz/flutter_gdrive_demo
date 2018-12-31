@@ -15,7 +15,12 @@
 4. In the info.plist, line 36, add the REVERSED_CLIENT_ID ( from GoogleService-info.plist )  
 5. Run 
 
-### [ ] Android
+### [x] Android
+
+1. Create a [Firebase project](https://firebase.google.com)
+2. Add an Android application
+3. Enable OAuth for Drive API => https://console.developers.google.com/
+4. Run 
 
 ## Getting Started
 

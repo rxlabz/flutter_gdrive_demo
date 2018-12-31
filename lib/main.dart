@@ -108,6 +108,10 @@ class DriveScreenState extends State<DriveScreen> {
                                   .toList(),
                             );
                           }
+                          if (snapshot.hasError)
+                            return Center(
+                              child: Text('Error ${snapshot.error}'),
+                            );
                           return SizedBox();
                         }),
                   ),
